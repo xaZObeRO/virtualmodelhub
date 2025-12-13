@@ -13,6 +13,7 @@ button{background:red;color:white;}
 video{max-width:400px;border-radius:5px;margin-bottom:5px;}
 .tip-btn{background:#ff2d55;color:white;border:none;padding:8px 15px;border-radius:20px;cursor:pointer;}
 .tip-btn:hover{background:#d11b3c;}
+.other-loop{opacity:0.5;}
 </style>
 </head>
 <body>
@@ -22,6 +23,8 @@ video{max-width:400px;border-radius:5px;margin-bottom:5px;}
 <button onclick="uploadLoop()">Upload Loop</button>
 <h3>Your Loops</h3>
 <div id="loopsContainer"></div>
+<h3>Other Creators Loops</h3>
+<div id="otherLoopsContainer"></div>
 
 <script>
 let user = localStorage.getItem('currentUser');
@@ -38,8 +41,10 @@ function saveLoops(){
 function renderLoops(){
     let container = document.getElementById('loopsContainer');
     container.innerHTML = "";
-    
-    loops.filter(l=>l.owner===user).forEach((loop,i)=>{
+    let otherContainer = document.getElementById('otherLoopsContainer');
+    otherContainer.innerHTML = "";
+
+    loops.forEach((loop,i)=>{
         let div = document.createElement('div'); 
         div.className = "loop-item";
 
@@ -48,36 +53,46 @@ function renderLoops(){
         videoEl.src = loop.url || URL.createObjectURL(loop.fileBlob || new Blob());
         videoEl.controls = true;
         videoEl.loop = true;
-        div.appendChild(videoEl);
 
         // Info
         let info = document.createElement('div');
-        info.innerText = `${loop.name} (${loop.duration}s) - ${loop.active?"Active":"Inactive"}`;
-        div.appendChild(info);
+        info.innerText = `${loop.name} (${loop.duration}s) - Owner: ${loop.owner} - ${loop.active?"Active":"Inactive"}`;
 
-        // Botones de control
-        let controls = document.createElement('div'); 
-        controls.className = "loop-controls";
+        if(loop.owner === user){
+            // Mis loops → controles completos
+            div.appendChild(videoEl);
+            div.appendChild(info);
 
-        let toggleBtn = document.createElement('button');
-        toggleBtn.innerText = loop.active?"Deactivate":"Activate";
-        toggleBtn.onclick = ()=>{ loops[i].active=!loops[i].active; saveLoops(); };
+            let controls = document.createElement('div'); 
+            controls.className = "loop-controls";
 
-        let deleteBtn = document.createElement('button');
-        deleteBtn.innerText = "Delete";
-        deleteBtn.onclick = ()=>{ loops.splice(i,1); saveLoops(); };
+            let toggleBtn = document.createElement('button');
+            toggleBtn.innerText = loop.active?"Deactivate":"Activate";
+            toggleBtn.onclick = ()=>{ loops[i].active=!loops[i].active; saveLoops(); };
 
-        let tipBtn = document.createElement('button');
-        tipBtn.className = "tip-btn";
-        tipBtn.innerText = "❤️ Tip this loop";
-        tipBtn.onclick = ()=>{ window.open("https://TU-LINK-DE-PAGO-AQUI",'_blank'); };
+            let deleteBtn = document.createElement('button');
+            deleteBtn.innerText = "Delete";
+            deleteBtn.onclick = ()=>{ loops.splice(i,1); saveLoops(); };
 
-        controls.appendChild(toggleBtn);
-        controls.appendChild(deleteBtn);
-        controls.appendChild(tipBtn);
+            let tipBtn = document.createElement('button');
+            tipBtn.className = "tip-btn";
+            tipBtn.innerText = "❤️ Tip this loop";
+            tipBtn.onclick = ()=>{ window.open("https://TU-LINK-DE-PAGO-AQUI",'_blank'); };
 
-        div.appendChild(controls);
-        container.appendChild(div);
+            controls.appendChild(toggleBtn);
+            controls.appendChild(deleteBtn);
+            controls.appendChild(tipBtn);
+
+            div.appendChild(controls);
+            container.appendChild(div);
+
+        } else {
+            // Loops de otros perfiles → solo lectura
+            div.classList.add('other-loop');
+            div.appendChild(videoEl);
+            div.appendChild(info);
+            otherContainer.appendChild(div);
+        }
     });
 }
 
