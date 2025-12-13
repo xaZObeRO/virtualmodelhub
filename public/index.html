@@ -6,84 +6,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: Arial, Helvetica, sans-serif;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, Helvetica, sans-serif; }
+    body { background: black; color: white; overflow: hidden; }
+    .video-bg { position: fixed; top:0; left:0; width:100vw; height:100vh; object-fit:cover; z-index:-1; filter: brightness(0.6) contrast(1.1); }
+    .overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.8)); }
+    .content { position: relative; height: 100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:20px; }
+    h1 { font-size:3rem; letter-spacing:2px; margin-bottom:20px; }
+    p { font-size:1.2rem; opacity:0.85; margin-bottom:40px; }
+    .footer { position:absolute; bottom:15px; font-size:0.8rem; opacity:0.6; }
 
-    body {
-      background: black;
-      color: white;
-      overflow: hidden;
-    }
-
-    .video-bg {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      object-fit: cover;
-      z-index: -1;
-      filter: brightness(0.6) contrast(1.1);
-    }
-
-    .overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.8));
-    }
-
-    .content {
-      position: relative;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      padding: 20px;
-    }
-
-    h1 {
-      font-size: 3rem;
-      letter-spacing: 2px;
-      margin-bottom: 20px;
-    }
-
-    p {
-      font-size: 1.2rem;
-      opacity: 0.85;
-      margin-bottom: 40px;
-    }
-
-    .cta {
-      padding: 15px 40px;
-      font-size: 1.1rem;
-      border: none;
-      border-radius: 30px;
-      background: red;
-      color: white;
-      cursor: pointer;
-      transition: transform 0.2s, background 0.2s;
-    }
-
-    .cta:hover {
-      background: darkred;
-      transform: scale(1.05);
-    }
-
-    .footer {
-      position: absolute;
-      bottom: 15px;
-      font-size: 0.8rem;
-      opacity: 0.6;
-    }
+    /* Lista de creadores */
+    .creators-list { display:flex; flex-wrap:wrap; justify-content:center; gap:15px; max-width:90vw; margin-top:20px; }
+    .creator-card { background: rgba(255,255,255,0.05); padding:20px; border-radius:15px; width:180px; text-align:center; transition: transform 0.2s, background 0.2s; }
+    .creator-card:hover { transform: scale(1.05); background: rgba(255,255,255,0.12); }
+    .creator-card a { color:white; text-decoration:none; font-weight:bold; font-size:1.1rem; }
   </style>
 </head>
 
@@ -100,14 +36,30 @@
     <h1>Live AI Models</h1>
     <p>24/7 · Virtual · NSFW</p>
 
-    <button class="cta" onclick="location.href='/live.html'">
-      ENTER LIVE
-    </button>
+    <div class="creators-list" id="creatorsList"></div>
 
     <div class="footer">
       © Virtual Model Hub · 18+ Only
     </div>
   </div>
+
+  <script>
+    // Lista de creadores de prueba
+    let users = ["creadora1","creadora2","creadora3"];
+
+    const listContainer = document.getElementById('creatorsList');
+    users.forEach(u=>{
+        const card = document.createElement('div');
+        card.className = "creator-card";
+
+        const link = document.createElement('a');
+        link.href = `../creator/live.html?user=${u}`;
+        link.innerText = u;
+
+        card.appendChild(link);
+        listContainer.appendChild(card);
+    });
+  </script>
 
 </body>
 </html>
