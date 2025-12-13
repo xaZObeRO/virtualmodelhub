@@ -8,9 +8,11 @@
 body{font-family:Arial;background:#111;color:white;padding:20px;}
 input,button{padding:10px 15px;margin:5px;border:none;border-radius:5px;cursor:pointer;}
 button{background:red;color:white;}
-.loop-item{border:1px solid #333;padding:10px;margin:10px 0;border-radius:5px;display:flex;flex-direction:column;}
+.loop-item{border:1px solid #333;padding:10px;margin:10px 0;border-radius:5px;display:flex;flex-direction:column;align-items:flex-start;}
 .loop-controls{display:flex;justify-content:flex-start;gap:10px;margin-top:5px;}
-video{max-width:300px;border-radius:5px;margin-bottom:5px;}
+video{max-width:400px;border-radius:5px;margin-bottom:5px;}
+.tip-btn{background:#ff2d55;color:white;border:none;padding:8px 15px;border-radius:20px;cursor:pointer;}
+.tip-btn:hover{background:#d11b3c;}
 </style>
 </head>
 <body>
@@ -22,58 +24,72 @@ video{max-width:300px;border-radius:5px;margin-bottom:5px;}
 <div id="loopsContainer"></div>
 
 <script>
-let user=localStorage.getItem('currentUser');
-document.getElementById('userEmail').innerText=user;
+let user = localStorage.getItem('currentUser');
+document.getElementById('userEmail').innerText = user;
 
-let loops=JSON.parse(localStorage.getItem('loops')||"[]");
+// Cargar loops desde localStorage
+let loops = JSON.parse(localStorage.getItem('loops')||"[]");
 
-function saveLoops(){ localStorage.setItem('loops',JSON.stringify(loops)); renderLoops(); }
+function saveLoops(){ 
+    localStorage.setItem('loops', JSON.stringify(loops)); 
+    renderLoops(); 
+}
 
 function renderLoops(){
-  let container=document.getElementById('loopsContainer');
-  container.innerHTML="";
-  // Filtrar solo loops del usuario
-  loops.filter(l=>l.owner===user).forEach((loop,i)=>{
-    let div=document.createElement('div'); 
-    div.className="loop-item";
+    let container = document.getElementById('loopsContainer');
+    container.innerHTML = "";
+    
+    loops.filter(l=>l.owner===user).forEach((loop,i)=>{
+        let div = document.createElement('div'); 
+        div.className = "loop-item";
 
-    // Video player
-    let videoEl=document.createElement('video');
-    videoEl.src=loop.url||URL.createObjectURL(loop.fileBlob||new Blob()); // fallback
-    videoEl.controls=true;
-    videoEl.loop=true;
-    div.appendChild(videoEl);
+        // Video preview
+        let videoEl = document.createElement('video');
+        videoEl.src = loop.url || URL.createObjectURL(loop.fileBlob || new Blob());
+        videoEl.controls = true;
+        videoEl.loop = true;
+        div.appendChild(videoEl);
 
-    // Nombre y duración
-    let info=document.createElement('div');
-    info.innerText=`${loop.name} (${loop.duration}s)`;
-    div.appendChild(info);
+        // Info
+        let info = document.createElement('div');
+        info.innerText = `${loop.name} (${loop.duration}s) - ${loop.active?"Active":"Inactive"}`;
+        div.appendChild(info);
 
-    // Botones de control
-    let controls=document.createElement('div'); controls.className="loop-controls";
-    let toggleBtn=document.createElement('button');
-    toggleBtn.innerText=loop.active?"Deactivate":"Activate";
-    toggleBtn.onclick=()=>{ loops[i].active=!loops[i].active; saveLoops(); };
-    let deleteBtn=document.createElement('button');
-    deleteBtn.innerText="Delete";
-    deleteBtn.onclick=()=>{ loops.splice(i,1); saveLoops(); };
-    controls.appendChild(toggleBtn); controls.appendChild(deleteBtn);
-    div.appendChild(controls);
+        // Botones de control
+        let controls = document.createElement('div'); 
+        controls.className = "loop-controls";
 
-    container.appendChild(div);
-  });
+        let toggleBtn = document.createElement('button');
+        toggleBtn.innerText = loop.active?"Deactivate":"Activate";
+        toggleBtn.onclick = ()=>{ loops[i].active=!loops[i].active; saveLoops(); };
+
+        let deleteBtn = document.createElement('button');
+        deleteBtn.innerText = "Delete";
+        deleteBtn.onclick = ()=>{ loops.splice(i,1); saveLoops(); };
+
+        let tipBtn = document.createElement('button');
+        tipBtn.className = "tip-btn";
+        tipBtn.innerText = "❤️ Tip this loop";
+        tipBtn.onclick = ()=>{ window.open("https://TU-LINK-DE-PAGO-AQUI",'_blank'); };
+
+        controls.appendChild(toggleBtn);
+        controls.appendChild(deleteBtn);
+        controls.appendChild(tipBtn);
+
+        div.appendChild(controls);
+        container.appendChild(div);
+    });
 }
 
 function uploadLoop(){
-  let file=document.getElementById('videoFile').files[0];
-  if(!file){alert("Selecciona un archivo mp4");return;}
+    let file = document.getElementById('videoFile').files[0];
+    if(!file){ alert("Selecciona un archivo mp4"); return; }
 
-  // Crear URL temporal para previsualizar
-  let fileURL=URL.createObjectURL(file);
-  let duration=Math.floor(file.size/1000000*10); // simula duración
+    let fileURL = URL.createObjectURL(file);
+    let duration = Math.floor(file.size/1000000*10); // simula duración
 
-  loops.push({owner:user,name:file.name,duration:duration,active:true,url:fileURL,fileBlob:file});
-  saveLoops();
+    loops.push({owner:user,name:file.name,duration:duration,active:true,url:fileURL,fileBlob:file});
+    saveLoops();
 }
 
 renderLoops();
