@@ -21,23 +21,28 @@ video{max-width:400px;border-radius:5px;margin-bottom:5px;}
 <h2>Welcome, <span id="userEmail"></span></h2>
 <input type="file" id="videoFile" accept="video/mp4">
 <button onclick="uploadLoop()">Upload Loop</button>
+
 <h3>Your Loops</h3>
 <div id="loopsContainer"></div>
+
 <h3>Other Creators Loops</h3>
 <div id="otherLoopsContainer"></div>
 
 <script>
+// Usuario actual
 let user = localStorage.getItem('currentUser');
 document.getElementById('userEmail').innerText = user;
 
 // Cargar loops desde localStorage
 let loops = JSON.parse(localStorage.getItem('loops')||"[]");
 
+// Guardar loops
 function saveLoops(){ 
     localStorage.setItem('loops', JSON.stringify(loops)); 
     renderLoops(); 
 }
 
+// Renderizar loops
 function renderLoops(){
     let container = document.getElementById('loopsContainer');
     container.innerHTML = "";
@@ -68,11 +73,29 @@ function renderLoops(){
 
             let toggleBtn = document.createElement('button');
             toggleBtn.innerText = loop.active?"Deactivate":"Activate";
-            toggleBtn.onclick = ()=>{ loops[i].active=!loops[i].active; saveLoops(); };
+            toggleBtn.onclick = ()=>{ 
+                loops[i].active=!loops[i].active; 
+                saveLoops();
+
+                // Actualizar loop activo para live
+                if(loops[i].active){
+                    localStorage.setItem('activeLoopURL', loops[i].url);
+                } else {
+                    if(localStorage.getItem('activeLoopURL') === loops[i].url){
+                        localStorage.removeItem('activeLoopURL');
+                    }
+                }
+            };
 
             let deleteBtn = document.createElement('button');
             deleteBtn.innerText = "Delete";
-            deleteBtn.onclick = ()=>{ loops.splice(i,1); saveLoops(); };
+            deleteBtn.onclick = ()=>{ 
+                if(localStorage.getItem('activeLoopURL') === loops[i].url){
+                    localStorage.removeItem('activeLoopURL');
+                }
+                loops.splice(i,1); 
+                saveLoops(); 
+            };
 
             let tipBtn = document.createElement('button');
             tipBtn.className = "tip-btn";
@@ -96,6 +119,7 @@ function renderLoops(){
     });
 }
 
+// Subida de loop
 function uploadLoop(){
     let file = document.getElementById('videoFile').files[0];
     if(!file){ alert("Selecciona un archivo mp4"); return; }
