@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Creator Dashboard</title>
+<style>
+body{font-family:Arial;background:#111;color:white;padding:20px;}
+button{padding:10px 15px;margin:5px;border:none;border-radius:5px;cursor:pointer;background:red;color:white;}
+.loop-item{border:1px solid #333;padding:10px;margin:10px 0;border-radius:5px;display:flex;justify-content:space-between;align-items:center;}
+</style>
+</head>
+<body>
+
+<h2>Welcome, <span id="userEmail"></span></h2>
+<input type="file" id="videoFile" accept="video/mp4">
+<button onclick="uploadLoop()">Upload Loop</button>
+<h3>Your Loops</h3>
+<div id="loopsContainer"></div>
+
+<script>
+let user=localStorage.getItem('currentUser');
+document.getElementById('userEmail').innerText=user;
+
+let loops=JSON.parse(localStorage.getItem('loops')||"[]");
+
+function saveLoops(){ localStorage.setItem('loops',JSON.stringify(loops)); renderLoops(); }
+
+function renderLoops(){
+  let container=document.getElementById('loopsContainer');
+  container.innerHTML="";
+  loops.filter(l=>l.owner===user).forEach((loop,i)=>{
+    let div=document.createElement('div'); div.className="loop-item";
+    div.innerHTML=`${loop.name} (${loop.duration} s) 
+      <div>
+        <button onclick="toggleLoop(${i})">${loop.active?"Deactivate":"Activate"}</button>
+        <button onclick="deleteLoop(${i})">Delete</button>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+function uploadLoop(){
+  let file=document.getElementById('videoFile').files[0];
+  if(!file){alert("Selecciona un archivo mp4");return;}
+  let duration=Math.floor(file.size/1000000*10); // simula duración
+  loops.push({owner:user,name:file.name,duration:duration,active:true});
+  saveLoops();
+}
+
+function toggleLoop(i){ loops[i].active=!loops[i].active; saveLoops(); }
+function deleteLoop(i){ loops.splice(i,1); saveLoops(); }
+
+renderLoops();
+</script>
+
+</body>
+</html>
