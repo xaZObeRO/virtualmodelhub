@@ -29,20 +29,16 @@ video{max-width:400px;border-radius:5px;margin-bottom:5px;}
 <div id="otherLoopsContainer"></div>
 
 <script>
-// Usuario actual
 let user = localStorage.getItem('currentUser');
 document.getElementById('userEmail').innerText = user;
 
-// Cargar loops desde localStorage
 let loops = JSON.parse(localStorage.getItem('loops')||"[]");
 
-// Guardar loops
 function saveLoops(){ 
     localStorage.setItem('loops', JSON.stringify(loops)); 
     renderLoops(); 
 }
 
-// Renderizar loops
 function renderLoops(){
     let container = document.getElementById('loopsContainer');
     container.innerHTML = "";
@@ -53,18 +49,15 @@ function renderLoops(){
         let div = document.createElement('div'); 
         div.className = "loop-item";
 
-        // Video preview
         let videoEl = document.createElement('video');
         videoEl.src = loop.url || URL.createObjectURL(loop.fileBlob || new Blob());
         videoEl.controls = true;
         videoEl.loop = true;
 
-        // Info
         let info = document.createElement('div');
         info.innerText = `${loop.name} (${loop.duration}s) - Owner: ${loop.owner} - ${loop.active?"Active":"Inactive"}`;
 
         if(loop.owner === user){
-            // Mis loops → controles completos
             div.appendChild(videoEl);
             div.appendChild(info);
 
@@ -76,8 +69,6 @@ function renderLoops(){
             toggleBtn.onclick = ()=>{ 
                 loops[i].active=!loops[i].active; 
                 saveLoops();
-
-                // Actualizar loop activo para live
                 if(loops[i].active){
                     localStorage.setItem('activeLoopURL', loops[i].url);
                 } else {
@@ -110,7 +101,6 @@ function renderLoops(){
             container.appendChild(div);
 
         } else {
-            // Loops de otros perfiles → solo lectura
             div.classList.add('other-loop');
             div.appendChild(videoEl);
             div.appendChild(info);
@@ -119,13 +109,12 @@ function renderLoops(){
     });
 }
 
-// Subida de loop
 function uploadLoop(){
     let file = document.getElementById('videoFile').files[0];
-    if(!file){ alert("Selecciona un archivo mp4"); return; }
+    if(!file){ alert("Select mp4 file"); return; }
 
     let fileURL = URL.createObjectURL(file);
-    let duration = Math.floor(file.size/1000000*10); // simula duración
+    let duration = Math.floor(file.size/1000000*10);
 
     loops.push({owner:user,name:file.name,duration:duration,active:true,url:fileURL,fileBlob:file});
     saveLoops();
