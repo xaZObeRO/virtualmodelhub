@@ -3,38 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Creator Login / Signup</title>
+<title>Login / Signup</title>
 <style>
-body{font-family:Arial;background:#111;color:white;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;}
-input,button{margin:10px;padding:10px;border-radius:5px;border:none;}
-button{cursor:pointer;background:red;color:white;}
+body{font-family:Arial;background:#111;color:white;text-align:center;padding:50px;}
+input,button{padding:10px 15px;margin:5px;border:none;border-radius:5px;}
+button{background:red;color:white;cursor:pointer;}
 </style>
 </head>
 <body>
-<h2>Login / Signup</h2>
-<input type="email" id="email" placeholder="Email" required>
-<input type="password" id="password" placeholder="Password" required>
-<button onclick="signup()">Sign Up</button>
-<button onclick="login()">Login</button>
+<h1>Login / Signup</h1>
+<input type="text" id="email" placeholder="Enter your email">
+<br>
+<button onclick="login()">Enter</button>
 
 <script>
-function signup(){
-  let email=document.getElementById('email').value;
-  let password=document.getElementById('password').value;
-  if(!email||!password){alert("Rellena ambos campos");return;}
-  localStorage.setItem(email,password);
-  localStorage.setItem('currentUser',email);
-  window.location.href="dashboard.html";
-}
 function login(){
-  let email=document.getElementById('email').value;
-  let password=document.getElementById('password').value;
-  if(localStorage.getItem(email)===password){
+    let email = document.getElementById('email').value.trim();
+    if(!email){ alert("Enter a valid email"); return;}
     localStorage.setItem('currentUser',email);
     window.location.href="dashboard.html";
-  }else{
-    alert("Usuario o contraseña incorrectos");
-  }
 }
 </script>
 </body>
