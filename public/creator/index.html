@@ -11,45 +11,39 @@ button{background:red;color:white;cursor:pointer;}
 #msg{margin-top:15px;color:yellow;}
 </style>
 
-<!-- 1️⃣ Supabase JS -->
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script>
-  // 2️⃣ Sustituye con tu proyecto real
-  const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";
-  const SUPABASE_ANON_KEY = "TU_ANON_PUBLIC_KEY";
-  const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_URL = "TU_SUPABASE_URL";
+const SUPABASE_ANON_KEY = "TU_ANON_PUBLIC_KEY";
+const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 </script>
 </head>
 <body>
 <h1>Login / Signup</h1>
 
-<!-- 3️⃣ Formulario -->
 <input type="email" id="email" placeholder="Enter your email">
-<input type="password" id="password" placeholder="Enter a password (6+ chars)">
+<input type="password" id="password" placeholder="Enter password">
 <br>
 <button onclick="signUp()">Sign Up</button>
 <button onclick="signIn()">Login</button>
 
 <p id="msg"></p>
 
-<!-- 4️⃣ Script login/signup -->
 <script>
 async function signUp(){
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value.trim();
     if(!email || !password){ alert("Email and password required"); return;}
     
-    // 4a️⃣ Crear usuario en Supabase Auth
     const { data, error } = await supabase.auth.signUp({ email, password });
     if(error){ document.getElementById('msg').innerText = error.message; return;}
     
-    // 4b️⃣ Crear fila en tabla creators
     await supabase.from("creators").insert({
         id: data.user.id,
         username: email.split("@")[0],
-        display_name: email.split("@")[0]
+        display_name: email.split("@")[0],
+        email: email
     });
-
     document.getElementById('msg').innerText = "Signup OK! You can now login.";
 }
 
@@ -61,7 +55,6 @@ async function signIn(){
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if(error){ document.getElementById('msg').innerText = error.message; return;}
 
-    // ✅ Redirige a dashboard del creador
     window.location.href = "dashboard.html";
 }
 </script>
