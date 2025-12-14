@@ -15,104 +15,9 @@ video{max-width:400px;border-radius:5px;margin-bottom:5px;}
 .tip-btn:hover{background:#d11b3c;}
 .other-loop{opacity:0.5;}
 </style>
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL = "TU_SUPABASE_URL";
-const SUPABASE_ANON_KEY = "TU_ANON_PUBLIC_KEY";
-const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-let user = null;
-
-async function init(){
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    if(!currentUser){ window.location.href="index.html"; return; }
-    user = currentUser;
-    document.getElementById('userEmail').innerText = user.email;
-    loadLoops();
-}
-
-async function loadLoops(){
-    let { data: myLoops } = await supabase.from('loops').select('*').eq('owner', user.id).order('created_at',{ascending:false});
-    let { data: otherLoops } = await supabase.from('loops').select('*').neq('owner', user.id).order('created_at',{ascending:false});
-    renderLoops(myLoops, otherLoops);
-}
-
-function renderLoops(myLoops, otherLoops){
-    let container = document.getElementById('loopsContainer');
-    let otherContainer = document.getElementById('otherLoopsContainer');
-    container.innerHTML = ""; otherContainer.innerHTML = "";
-
-    myLoops.forEach(loop => createLoopDiv(loop, true, container));
-    otherLoops.forEach(loop => createLoopDiv(loop, false, otherContainer));
-}
-
-function createLoopDiv(loop, isOwner, container){
-    let div = document.createElement('div'); 
-    div.className = "loop-item";
-    if(!isOwner) div.classList.add('other-loop');
-
-    let videoEl = document.createElement('video');
-    videoEl.src = loop.url;
-    videoEl.controls = true;
-    videoEl.loop = true;
-
-    let info = document.createElement('div');
-    info.innerText = `${loop.name} (${loop.duration}s) - ${loop.active?"Active":"Inactive"}`;
-    div.appendChild(videoEl);
-    div.appendChild(info);
-
-    if(isOwner){
-        let controls = document.createElement('div'); controls.className="loop-controls";
-
-        let toggleBtn = document.createElement('button');
-        toggleBtn.innerText = loop.active?"Deactivate":"Activate";
-        toggleBtn.onclick = async ()=>{
-            await supabase.from('loops').update({active:!loop.active}).eq('id',loop.id);
-            loadLoops();
-        };
-
-        let deleteBtn = document.createElement('button');
-        deleteBtn.innerText = "Delete";
-        deleteBtn.onclick = async ()=>{
-            await supabase.from('loops').delete().eq('id',loop.id);
-            await supabase.storage.from('loops').remove([`${user.id}/${loop.name}`]);
-            loadLoops();
-        };
-
-        let tipBtn = document.createElement('button');
-        tipBtn.className = "tip-btn";
-        tipBtn.innerText = "❤️ Tip this loop";
-        tipBtn.onclick = ()=>{ window.open("https://TU-LINK-DE-PAGO-AQUI",'_blank'); };
-
-        controls.appendChild(toggleBtn);
-        controls.appendChild(deleteBtn);
-        controls.appendChild(tipBtn);
-        div.appendChild(controls);
-    }
-
-    container.appendChild(div);
-}
-
-async function uploadLoop(){
-    let file = document.getElementById('videoFile').files[0];
-    if(!file){ alert("Select mp4"); return; }
-
-    const { data, error } = await supabase.storage.from('loops').upload(`${user.id}/${file.name}`, file, { upsert:true });
-    if(error){ alert(error.message); return; }
-
-    const { data: urlData } = supabase.storage.from('loops').getPublicUrl(`${user.id}/${file.name}`);
-    await supabase.from('loops').insert({
-        owner: user.id,
-        name: file.name,
-        duration: Math.floor(file.size/1000000*10),
-        active: true,
-        url: urlData.publicUrl
-    });
-    loadLoops();
-}
-</script>
 </head>
-<body onload="init()">
+<body>
+
 <h2>Welcome, <span id="userEmail"></span></h2>
 <input type="file" id="videoFile" accept="video/mp4">
 <button onclick="uploadLoop()">Upload Loop</button>
@@ -122,5 +27,128 @@ async function uploadLoop(){
 
 <h3>Other Creators Loops</h3>
 <div id="otherLoopsContainer"></div>
+
+<!-- SUPABASE -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const supabase = supabaseJs.createClient(
+  "https://uurmdzzmzwumjtanlcvz.supabase.coL",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1cm1kenptend1bWp0YW5sY3Z6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MDkwNDcsImV4cCI6MjA4MTI4NTA0N30.mVQKqbk0IZbXLrWMOvOqiB9OSHJgk09Wg0DsIJs0mhA"
+);
+
+let userEmail = "";
+const loopsContainer = document.getElementById("loopsContainer");
+const otherContainer = document.getElementById("otherLoopsContainer");
+const userSpan = document.getElementById("userEmail");
+
+// Detect logged user
+async function checkUser() {
+  const { data, error } = await supabase.auth.getSession();
+  if(error || !data.session){
+    window.location.href = "index.html";
+    return;
+  }
+  userEmail = data.session.user.email;
+  userSpan.innerText = userEmail;
+  loadLoops();
+}
+
+// Load loops from Supabase
+async function loadLoops() {
+  const { data: loops, error } = await supabase
+    .from("loops")
+    .select("*");
+
+  if(error){ console.error(error); return; }
+
+  loopsContainer.innerHTML = "";
+  otherContainer.innerHTML = "";
+
+  loops.forEach(loop => {
+    const div = document.createElement("div");
+    div.className = "loop-item";
+
+    const videoEl = document.createElement("video");
+    videoEl.src = loop.video_url;
+    videoEl.controls = true;
+    videoEl.loop = true;
+
+    const info = document.createElement("div");
+    info.innerText = `${loop.name} - Owner: ${loop.owner} - ${loop.active?"Active":"Inactive"}`;
+
+    const controls = document.createElement("div");
+    controls.className = "loop-controls";
+
+    if(loop.owner === userEmail){
+      // Own loops
+      const toggleBtn = document.createElement("button");
+      toggleBtn.innerText = loop.active ? "Deactivate" : "Activate";
+      toggleBtn.onclick = async () => {
+        await supabase.from("loops").update({active:!loop.active}).eq("id", loop.id);
+        loadLoops();
+      };
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.innerText = "Delete";
+      deleteBtn.onclick = async () => {
+        await supabase.from("loops").delete().eq("id", loop.id);
+        loadLoops();
+      };
+
+      const tipBtn = document.createElement("button");
+      tipBtn.className = "tip-btn";
+      tipBtn.innerText = "❤️ Tip this loop";
+      tipBtn.onclick = () => window.open("https://TU-LINK-DE-PAGO-AQUI",'_blank');
+
+      controls.appendChild(toggleBtn);
+      controls.appendChild(deleteBtn);
+      controls.appendChild(tipBtn);
+
+      div.appendChild(videoEl);
+      div.appendChild(info);
+      div.appendChild(controls);
+      loopsContainer.appendChild(div);
+
+    } else {
+      // Other loops
+      div.classList.add('other-loop');
+      div.appendChild(videoEl);
+      div.appendChild(info);
+      otherContainer.appendChild(div);
+    }
+  });
+}
+
+// Upload video loop to Supabase Storage and add row in loops
+async function uploadLoop() {
+  const file = document.getElementById("videoFile").files[0];
+  if(!file){ alert("Select mp4 file"); return; }
+
+  const fileName = `${Date.now()}_${file.name}`;
+
+  // Upload file
+  const { data, error } = await supabase.storage
+    .from("loops")
+    .upload(fileName, file);
+
+  if(error){ console.error(error); alert("Upload failed"); return; }
+
+  // Get public URL
+  const { data: urlData } = supabase.storage.from("loops").getPublicUrl(fileName);
+
+  // Insert in table
+  await supabase.from("loops").insert({
+    owner: userEmail,
+    name: file.name,
+    video_url: urlData.publicUrl,
+    active: true
+  });
+
+  loadLoops();
+}
+
+checkUser();
+</script>
+
 </body>
 </html>
