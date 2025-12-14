@@ -15,8 +15,122 @@ video{max-width:400px;border-radius:5px;margin-bottom:5px;}
 .tip-btn:hover{background:#d11b3c;}
 .other-loop{opacity:0.5;}
 </style>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = "TU_SUPABASE_URL";
+  const SUPABASE_ANON_KEY = "TU_ANON_PUBLIC_KEY";
+  const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let user = null;
+
+  async function init(){
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if(!currentUser){ window.location.href="index.html"; return; }
+      user = currentUser;
+      document.getElementById('userEmail').innerText = user.email;
+      loadLoops();
+  }
+
+  async function loadLoops(){
+      // Tus loops
+      let { data: myLoops, error } = await supabase
+        .from('loops')
+        .select('*')
+        .eq('owner', user.id)
+        .order('created_at',{ascending:false});
+      
+      // Otros loops
+      let { data: otherLoops } = await supabase
+        .from('loops')
+        .select('*')
+        .neq('owner', user.id)
+        .order('created_at',{ascending:false});
+      
+      renderLoops(myLoops, otherLoops);
+  }
+
+  function renderLoops(myLoops, otherLoops){
+      let container = document.getElementById('loopsContainer');
+      let otherContainer = document.getElementById('otherLoopsContainer');
+      container.innerHTML = ""; otherContainer.innerHTML = "";
+
+      myLoops.forEach(loop => createLoopDiv(loop, true, container));
+      otherLoops.forEach(loop => createLoopDiv(loop, false, otherContainer));
+  }
+
+  function createLoopDiv(loop, isOwner, container){
+      let div = document.createElement('div'); 
+      div.className = "loop-item";
+      if(!isOwner) div.classList.add('other-loop');
+
+      let videoEl = document.createElement('video');
+      videoEl.src = loop.url;
+      videoEl.controls = true;
+      videoEl.loop = true;
+
+      let info = document.createElement('div');
+      info.innerText = `${loop.name} (${loop.duration}s) - ${loop.active?"Active":"Inactive"}`;
+
+      div.appendChild(videoEl);
+      div.appendChild(info);
+
+      if(isOwner){
+          let controls = document.createElement('div'); controls.className="loop-controls";
+
+          let toggleBtn = document.createElement('button');
+          toggleBtn.innerText = loop.active?"Deactivate":"Activate";
+          toggleBtn.onclick = async ()=>{
+              await supabase.from('loops').update({active:!loop.active}).eq('id',loop.id);
+              loadLoops();
+          };
+
+          let deleteBtn = document.createElement('button');
+          deleteBtn.innerText = "Delete";
+          deleteBtn.onclick = async ()=>{
+              await supabase.from('loops').delete().eq('id',loop.id);
+              await supabase.storage.from('loops').remove([`${user.id}/${loop.name}`]);
+              loadLoops();
+          };
+
+          let tipBtn = document.createElement('button');
+          tipBtn.className = "tip-btn";
+          tipBtn.innerText = "❤️ Tip this loop";
+          tipBtn.onclick = ()=>{ window.open("https://TU-LINK-DE-PAGO-AQUI",'_blank'); };
+
+          controls.appendChild(toggleBtn);
+          controls.appendChild(deleteBtn);
+          controls.appendChild(tipBtn);
+          div.appendChild(controls);
+      }
+
+      container.appendChild(div);
+  }
+
+  async function uploadLoop(){
+      let file = document.getElementById('videoFile').files[0];
+      if(!file){ alert("Select mp4"); return; }
+
+      let { data, error } = await supabase.storage
+        .from('loops')
+        .upload(`${user.id}/${file.name}`, file, { upsert: true });
+
+      if(error){ alert(error.message); return; }
+
+      let { data: urlData } = supabase.storage.from('loops').getPublicUrl(`${user.id}/${file.name}`);
+      
+      await supabase.from('loops').insert({
+          owner: user.id,
+          name: file.name,
+          duration: Math.floor(file.size/1000000*10),
+          active: true,
+          url: urlData.publicUrl
+      });
+
+      loadLoops();
+  }
+</script>
 </head>
-<body>
+<body onload="init()">
 
 <h2>Welcome, <span id="userEmail"></span></h2>
 <input type="file" id="videoFile" accept="video/mp4">
@@ -27,101 +141,6 @@ video{max-width:400px;border-radius:5px;margin-bottom:5px;}
 
 <h3>Other Creators Loops</h3>
 <div id="otherLoopsContainer"></div>
-
-<script>
-let user = localStorage.getItem('currentUser');
-document.getElementById('userEmail').innerText = user;
-
-let loops = JSON.parse(localStorage.getItem('loops')||"[]");
-
-function saveLoops(){ 
-    localStorage.setItem('loops', JSON.stringify(loops)); 
-    renderLoops(); 
-}
-
-function renderLoops(){
-    let container = document.getElementById('loopsContainer');
-    container.innerHTML = "";
-    let otherContainer = document.getElementById('otherLoopsContainer');
-    otherContainer.innerHTML = "";
-
-    loops.forEach((loop,i)=>{
-        let div = document.createElement('div'); 
-        div.className = "loop-item";
-
-        let videoEl = document.createElement('video');
-        videoEl.src = loop.url || URL.createObjectURL(loop.fileBlob || new Blob());
-        videoEl.controls = true;
-        videoEl.loop = true;
-
-        let info = document.createElement('div');
-        info.innerText = `${loop.name} (${loop.duration}s) - Owner: ${loop.owner} - ${loop.active?"Active":"Inactive"}`;
-
-        if(loop.owner === user){
-            div.appendChild(videoEl);
-            div.appendChild(info);
-
-            let controls = document.createElement('div'); 
-            controls.className = "loop-controls";
-
-            let toggleBtn = document.createElement('button');
-            toggleBtn.innerText = loop.active?"Deactivate":"Activate";
-            toggleBtn.onclick = ()=>{ 
-                loops[i].active=!loops[i].active; 
-                saveLoops();
-                if(loops[i].active){
-                    localStorage.setItem('activeLoopURL', loops[i].url);
-                } else {
-                    if(localStorage.getItem('activeLoopURL') === loops[i].url){
-                        localStorage.removeItem('activeLoopURL');
-                    }
-                }
-            };
-
-            let deleteBtn = document.createElement('button');
-            deleteBtn.innerText = "Delete";
-            deleteBtn.onclick = ()=>{ 
-                if(localStorage.getItem('activeLoopURL') === loops[i].url){
-                    localStorage.removeItem('activeLoopURL');
-                }
-                loops.splice(i,1); 
-                saveLoops(); 
-            };
-
-            let tipBtn = document.createElement('button');
-            tipBtn.className = "tip-btn";
-            tipBtn.innerText = "❤️ Tip this loop";
-            tipBtn.onclick = ()=>{ window.open("https://TU-LINK-DE-PAGO-AQUI",'_blank'); };
-
-            controls.appendChild(toggleBtn);
-            controls.appendChild(deleteBtn);
-            controls.appendChild(tipBtn);
-
-            div.appendChild(controls);
-            container.appendChild(div);
-
-        } else {
-            div.classList.add('other-loop');
-            div.appendChild(videoEl);
-            div.appendChild(info);
-            otherContainer.appendChild(div);
-        }
-    });
-}
-
-function uploadLoop(){
-    let file = document.getElementById('videoFile').files[0];
-    if(!file){ alert("Select mp4 file"); return; }
-
-    let fileURL = URL.createObjectURL(file);
-    let duration = Math.floor(file.size/1000000*10);
-
-    loops.push({owner:user,name:file.name,duration:duration,active:true,url:fileURL,fileBlob:file});
-    saveLoops();
-}
-
-renderLoops();
-</script>
 
 </body>
 </html>
