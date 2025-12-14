@@ -3,38 +3,71 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Live Stream</title>
+<title>Live - Creator</title>
 <style>
-body{margin:0;background:black;display:flex;justify-content:center;align-items:center;height:100vh;}
-video{width:100%;height:100%;object-fit:cover;}
+body{margin:0;padding:0;font-family:Arial;background:black;color:white;}
+.video-bg{position:fixed;top:0;left:0;width:100vw;height:100vh;object-fit:cover;z-index:-1;filter:brightness(0.7);}
+.overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);}
+.content{position:relative;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:20px;}
+h1{font-size:3rem;margin-bottom:10px;}
+p{font-size:1.2rem;opacity:0.8;margin-bottom:20px;}
+.back-home{position:absolute;top:20px;left:20px;padding:10px 20px;background:red;color:white;text-decoration:none;border-radius:5px;}
 </style>
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL = "TU_SUPABASE_URL";
-const SUPABASE_ANON_KEY = "TU_ANON_PUBLIC_KEY";
-const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-async function loadLoop(){
-    const ownerId = new URLSearchParams(window.location.search).get('user'); // ?user=UUID
-    if(!ownerId){ document.body.innerHTML="<h2 style='color:white;'>User not specified</h2>"; return; }
-
-    const { data: loops } = await supabase.from('loops').select('*').eq('owner', ownerId).eq('active', true).order('created_at',{ascending:false}).limit(1);
-    if(loops.length>0){
-        const video = document.createElement('video');
-        video.src = loops[0].url;
-        video.autoplay=true;
-        video.loop=true;
-        video.muted=true;
-        video.playsInline=true;
-        document.body.appendChild(video);
-    } else {
-        document.body.innerHTML="<h2 style='color:white;'>No active loop</h2>";
-    }
-}
-
-window.onload=loadLoop;
-</script>
 </head>
 <body>
+
+<div class="overlay"></div>
+<div class="content">
+  <a class="back-home" href="/index.html">← Home</a>
+  <h1 id="creatorName">Loading...</h1>
+  <video id="liveVideo" autoplay muted loop playsinline style="max-width:90vw;max-height:70vh;border-radius:10px;"></video>
+  <p>24/7 · Virtual · NSFW</p>
+</div>
+
+<!-- SUPABASE -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const supabase = supabaseJs.createClient(
+  "TU_SUPABASE_URL",
+  "TU_SUPABASE_ANON_KEY"
+);
+
+// Obtener nombre del creator de la query string
+const urlParams = new URLSearchParams(window.location.search);
+const creator = urlParams.get("creator");
+
+const creatorNameEl = document.getElementById("creatorName");
+const liveVideo = document.getElementById("liveVideo");
+
+creatorNameEl.innerText = creator || "Unknown Creator";
+
+// Cargar loop activo del creator
+async function loadLiveLoop() {
+  const { data: loops, error } = await supabase
+    .from("loops")
+    .select("*")
+    .eq("owner", creator)
+    .eq("active", true)
+    .order("created_at", { ascending: true })
+    .limit(1);
+
+  if(error){
+    console.error(error);
+    liveVideo.poster = "";
+    return;
+  }
+
+  if(!loops || loops.length === 0){
+    liveVideo.poster = "";
+    creatorNameEl.innerText = `${creator} is not live`;
+    return;
+  }
+
+  liveVideo.src = loops[0].video_url;
+}
+
+loadLiveLoop();
+</script>
+
 </body>
 </html>
