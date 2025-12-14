@@ -3,60 +3,62 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login / Signup</title>
+<title>Virtual Model Hub</title>
 <style>
-body{font-family:Arial;background:#111;color:white;text-align:center;padding:50px;}
-input,button{padding:10px 15px;margin:5px;border:none;border-radius:5px;}
-button{background:red;color:white;cursor:pointer;}
-#msg{margin-top:15px;color:yellow;}
+body{margin:0;font-family:Arial, Helvetica, sans-serif;background:#111;color:white;}
+h1{text-align:center;margin:20px;}
+.loops-container{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;padding:20px;}
+.loop-item{background:#222;padding:10px;border-radius:10px;display:flex;flex-direction:column;align-items:center;}
+.loop-item video{width:100%;border-radius:10px;}
+.loop-item h3{margin:10px 0 5px;}
+.loop-item button{background:red;color:white;border:none;padding:10px 20px;border-radius:20px;cursor:pointer;margin-bottom:5px;}
+.loop-item button:hover{background:darkred;}
 </style>
-
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = "TU_SUPABASE_URL";
 const SUPABASE_ANON_KEY = "TU_ANON_PUBLIC_KEY";
 const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+async function loadLoops(){
+    const { data: loops } = await supabase.from('loops')
+        .select('*, owner:creators(id, display_name)')
+        .eq('active', true)
+        .order('created_at',{ascending:false});
+    
+    const container = document.getElementById('loopsContainer');
+    container.innerHTML = "";
+
+    loops.forEach(loop=>{
+        const div = document.createElement('div');
+        div.className = "loop-item";
+
+        const title = document.createElement('h3');
+        title.innerText = `${loop.owner.display_name} - ${loop.name}`;
+        div.appendChild(title);
+
+        const video = document.createElement('video');
+        video.src = loop.url;
+        video.loop = true;
+        video.autoplay = true;
+        video.muted = true;
+        video.playsInline = true;
+        div.appendChild(video);
+
+        const btn = document.createElement('button');
+        btn.innerText = "Go Live 24/7";
+        btn.onclick = ()=>{ window.location.href=`/creator/live.html?user=${loop.owner.id}`; };
+        div.appendChild(btn);
+
+        container.appendChild(div);
+    });
+}
+
+window.onload = loadLoops;
 </script>
 </head>
 <body>
-<h1>Login / Signup</h1>
-
-<input type="email" id="email" placeholder="Enter your email">
-<input type="password" id="password" placeholder="Enter password">
-<br>
-<button onclick="signUp()">Sign Up</button>
-<button onclick="signIn()">Login</button>
-
-<p id="msg"></p>
-
-<script>
-async function signUp(){
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value.trim();
-    if(!email || !password){ alert("Email and password required"); return;}
-    
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    if(error){ document.getElementById('msg').innerText = error.message; return;}
-    
-    await supabase.from("creators").insert({
-        id: data.user.id,
-        username: email.split("@")[0],
-        display_name: email.split("@")[0],
-        email: email
-    });
-    document.getElementById('msg').innerText = "Signup OK! You can now login.";
-}
-
-async function signIn(){
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value.trim();
-    if(!email || !password){ alert("Email and password required"); return;}
-
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if(error){ document.getElementById('msg').innerText = error.message; return;}
-
-    window.location.href = "dashboard.html";
-}
-</script>
+<h1>Virtual Model Hub · Live AI Loops 24/7</h1>
+<div class="loops-container" id="loopsContainer"></div>
 </body>
 </html>
