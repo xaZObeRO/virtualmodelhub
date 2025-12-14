@@ -6,122 +6,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: Arial, Helvetica, sans-serif;
-    }
-
-    body {
-      background: black;
-      color: white;
-      overflow: hidden;
-    }
-
-    .video-bg {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      object-fit: cover;
-      z-index: -1;
-      filter: brightness(0.6) contrast(1.1);
-    }
-
-    .overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.85));
-    }
-
-    .content {
-      position: relative;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      padding: 20px;
-    }
-
-    h1 {
-      font-size: 3rem;
-      letter-spacing: 2px;
-      margin-bottom: 10px;
-    }
-
-    p {
-      font-size: 1.2rem;
-      opacity: 0.85;
-      margin-bottom: 35px;
-    }
-
-    .creators-list {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 18px;
-      max-width: 95vw;
-    }
-
-    .creator-card {
-      background: rgba(255,255,255,0.06);
-      padding: 18px 22px;
-      border-radius: 18px;
-      min-width: 180px;
-      transition: transform 0.2s ease, background 0.2s ease;
-      backdrop-filter: blur(6px);
-    }
-
-    .creator-card:hover {
-      transform: scale(1.06);
-      background: rgba(255,255,255,0.14);
-    }
-
-    .creator-card a {
-      color: white;
-      text-decoration: none;
-      font-weight: bold;
-      font-size: 1.15rem;
-    }
-
-    .live-dot {
-      color: red;
-      margin-right: 6px;
-    }
-
-    .footer {
-      position: absolute;
-      bottom: 15px;
-      font-size: 0.8rem;
-      opacity: 0.6;
-    }
+    * { margin:0; padding:0; box-sizing:border-box; font-family:Arial, Helvetica, sans-serif; }
+    body { background:black; color:white; overflow:hidden; }
+    .video-bg { position:fixed; top:0; left:0; width:100vw; height:100vh; object-fit:cover; z-index:-1; filter:brightness(0.6) contrast(1.1); }
+    .overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.85)); }
+    .content { position:relative; height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:20px; }
+    h1 { font-size:3rem; letter-spacing:2px; margin-bottom:10px; }
+    p { font-size:1.2rem; opacity:0.85; margin-bottom:35px; }
+    .creators-list { display:flex; flex-wrap:wrap; justify-content:center; gap:18px; max-width:95vw; }
+    .creator-card { background: rgba(255,255,255,0.06); padding:18px 22px; border-radius:18px; min-width:180px; transition: transform 0.2s ease, background 0.2s ease; backdrop-filter:blur(6px); }
+    .creator-card:hover { transform:scale(1.06); background: rgba(255,255,255,0.14); }
+    .creator-card a { color:white; text-decoration:none; font-weight:bold; font-size:1.15rem; }
+    .live-dot { color:red; margin-right:6px; }
+    .footer { position:absolute; bottom:15px; font-size:0.8rem; opacity:0.6; }
   </style>
 </head>
 
 <body>
-
   <!-- VIDEO BACKGROUND -->
   <video class="video-bg" autoplay muted loop playsinline>
     <source src="loop.mp4" type="video/mp4">
   </video>
-
   <div class="overlay"></div>
 
   <div class="content">
     <h1>Live AI Models</h1>
     <p>24/7 · Virtual · NSFW</p>
-
     <div class="creators-list" id="creatorsList">
-      <!-- Creators here -->
+      <!-- Creators aparecerán aquí -->
     </div>
-
     <div class="footer">
       © Virtual Model Hub · 18+ Only
     </div>
@@ -131,12 +44,12 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const supabase = supabaseJs.createClient(
-      "SUPABASE_URL",
-      "SUPABASE_ANON_KEY"
+      "https://uurmdzzmzwumjtanlcvz.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1cm1kenptend1bWp0YW5sY3Z6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MDkwNDcsImV4cCI6MjA4MTI4NTA0N30.mVQKqbk0IZbXLrWMOvOqiB9OSHJgk09Wg0DsIJs0mhA"
     );
   </script>
 
-  <!-- LOGIC -->
+  <!-- LOGICA -->
   <script>
     const container = document.getElementById("creatorsList");
 
@@ -146,13 +59,13 @@
         .select("owner")
         .eq("active", true);
 
-      if (error) {
-        container.innerHTML = "<p>Error loading creators</p>";
+      if(error) {
+        container.innerHTML = "<p>Error cargando creadores</p>";
         console.error(error);
         return;
       }
 
-      if (!data || data.length === 0) {
+      if(!data || data.length === 0){
         container.innerHTML = "<p style='opacity:.6'>No models live right now</p>";
         return;
       }
@@ -174,6 +87,5 @@
 
     loadLiveCreators();
   </script>
-
 </body>
 </html>
