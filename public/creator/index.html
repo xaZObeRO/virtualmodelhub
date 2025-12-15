@@ -29,6 +29,7 @@ async function login(){
   const { data, error } = await supabase.auth.signInWithOtp({ email });
   if(error){ console.error(error); msg.innerText="Error sending login email"; return; }
   msg.innerText="Check your email to login!";
+  console.log("LOGIN CLICK");
 }
 
 // Escuchar cambios de sesión
