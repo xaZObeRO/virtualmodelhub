@@ -35,7 +35,7 @@ p{font-size:1.2rem;opacity:0.8;margin-bottom:20px;}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const supabase = supabaseJs.createClient("TU_SUPABASE_URL","TU_SUPABASE_ANON_KEY");
+const supabase = supabaseJs.createClient("https://uurmdzzmzwumjtanlcvz.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1cm1kenptend1bWp0YW5sY3Z6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MDkwNDcsImV4cCI6MjA4MTI4NTA0N30.mVQKqbk0IZbXLrWMOvOqiB9OSHJgk09Wg0DsIJs0mhA");
 
 async function loadCreators() {
   const { data: loops, error } = await supabase.from("loops").select("*").eq("active",true);
