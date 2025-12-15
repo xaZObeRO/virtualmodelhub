@@ -25,23 +25,46 @@ video{max-width:400px;border-radius:5px;margin-bottom:5px;}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const supabase = supabase.createClient("TU_SUPABASE_URL","TU_SUPABASE_ANON_KEY");
-let user = supabase.auth.getUser().then(r=>user=r.data.user.email || "demo");
 
-document.getElementById('userEmail').innerText = localStorage.getItem('currentUser') || "demo";
+async function init(){
+  const { data:userData } = await supabase.auth.getUser();
+  const userEmail = userData.user?.email || "demo";
+  document.getElementById("userEmail").innerText = userEmail;
+
+  renderLoops(userEmail);
+}
+
+async function renderLoops(userEmail){
+  const { data: loops } = await supabase.from('loops').select('*').eq('owner', userEmail);
+  const container = document.getElementById('loopsContainer');
+  container.innerHTML = "";
+
+  loops.forEach(loop=>{
+    const div = document.createElement('div');
+    div.className='loop-item';
+    div.innerHTML=`<video src="${loop.url}" controls loop></video>
+                   <div>${loop.name} - ${loop.active?"LIVE":"Inactive"}</div>`;
+    container.appendChild(div);
+  });
+}
 
 async function uploadLoop(){
-    const file = document.getElementById('videoFile').files[0];
-    if(!file){ alert("Select mp4 file"); return; }
+  const file = document.getElementById('videoFile').files[0];
+  if(!file){ alert("Select mp4 file"); return; }
 
-    const fileName = `${Date.now()}_${file.name}`;
-    const { data, error } = await supabase.storage.from('loops').upload(`loops/${fileName}`, file);
+  const fileName = `${Date.now()}_${file.name}`;
+  const { data, error } = await supabase.storage.from('loops').upload(`loops/${fileName}`, file);
+  if(error){ console.error(error); alert("Upload failed"); return; }
 
-    if(error){ console.error(error); alert("Upload failed"); return; }
-    const url = supabase.storage.from('loops').getPublicUrl(`loops/${fileName}`).publicUrl;
+  const url = supabase.storage.from('loops').getPublicUrl(`loops/${fileName}`).publicUrl;
+  const owner = document.getElementById("userEmail").innerText;
 
-    await supabase.from('loops').insert([{ owner:localStorage.getItem('currentUser'), name:file.name, duration:0, active:true, url }]);
-    alert("Loop uploaded!");
+  await supabase.from('loops').insert([{ owner, name:file.name, duration:0, active:true, url }]);
+  alert("Loop uploaded!");
+  renderLoops(owner);
 }
+
+init();
 </script>
 
 </body>
