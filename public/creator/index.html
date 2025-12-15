@@ -27,33 +27,22 @@ const supabaseClient = supabase.createClient(
 );
 
 const msg = document.getElementById("msg");
+const btn = document.querySelector("button");
 
-async function login(){
-  console.log("CLICK");
-  const email=document.getElementById("email").value.trim();
-
-  if(!email){
-    msg.innerText="Enter a valid email";
-    return;
-  }
-
-  const { error } = await supabaseClient.auth.signInWithOtp({ email });
-
-  if(error){
-    console.error(error);
-    msg.innerText="Error sending login email";
-    return;
-  }
-
-  msg.innerText="Check your email to login!";
-}
+btn.addEventListener("click", async ()=>{
+    console.log("CLICK");
+    const email = document.getElementById("email").value.trim();
+    if(!email){ msg.innerText="Enter a valid email"; return; }
+    const { error } = await supabaseClient.auth.signInWithOtp({ email });
+    if(error){ msg.innerText="Error sending login email"; console.error(error); return; }
+    msg.innerText="Check your email to login!";
+});
 
 supabaseClient.auth.onAuthStateChange((event, session)=>{
-  if(session){
-    window.location.href="dashboard.html";
-  }
+    if(session) window.location.href="dashboard.html";
 });
 </script>
+
 
 </body>
 </html>
