@@ -14,14 +14,14 @@ button{background:red;color:white;cursor:pointer;}
 <body>
 
 <h1>Login / Signup</h1>
-<input type="email" id="email" placeholder="Enter your email" required>
+<input type="email" id="email" placeholder="Enter your email">
 <br>
 <button onclick="login()">Enter</button>
 <div class="message" id="msg"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const supabase = supabaseJs.createClient(
+const supabaseClient = supabase.createClient(
   "https://uurmdzzmzwumjtanlcvz.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1cm1kenptend1bWp0YW5sY3Z6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MDkwNDcsImV4cCI6MjA4MTI4NTA0N30.mVQKqbk0IZbXLrWMOvOqiB9OSHJgk09Wg0DsIJs0mhA"
 );
@@ -29,10 +29,15 @@ const supabase = supabaseJs.createClient(
 const msg = document.getElementById("msg");
 
 async function login(){
+  console.log("CLICK");
   const email=document.getElementById("email").value.trim();
-  if(!email){ msg.innerText="Enter a valid email"; return; }
 
-  const { error } = await supabase.auth.signInWithOtp({ email });
+  if(!email){
+    msg.innerText="Enter a valid email";
+    return;
+  }
+
+  const { error } = await supabaseClient.auth.signInWithOtp({ email });
 
   if(error){
     console.error(error);
@@ -43,12 +48,12 @@ async function login(){
   msg.innerText="Check your email to login!";
 }
 
-// Escuchar sesión activa
-supabase.auth.onAuthStateChange((event, session)=>{
+supabaseClient.auth.onAuthStateChange((event, session)=>{
   if(session){
     window.location.href="dashboard.html";
   }
 });
 </script>
+
 </body>
 </html>
