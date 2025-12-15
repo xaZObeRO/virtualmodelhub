@@ -3,53 +3,34 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Live</title>
-
+<title>Live Channel</title>
 <style>
-body{margin:0;background:black;color:white;font-family:Arial;}
+body{margin:0;background:black;}
 video{width:100vw;height:100vh;object-fit:cover;}
-.overlay{position:absolute;top:0;left:0;width:100%;padding:15px;background:linear-gradient(to bottom,rgba(0,0,0,.7),transparent);}
 </style>
 </head>
 <body>
-
-<div class="overlay">
-<h2 id="title"></h2>
-</div>
-
-<video id="video" autoplay muted loop playsinline></video>
+<video id="liveVideo" autoplay muted loop playsinline></video>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const supabase = supabaseJs.createClient(
-  "https://uurmdzzmzwumjtanlcvz.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1cm1kenptend1bWp0YW5sY3Z6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MDkwNDcsImV4cCI6MjA4MTI4NTA0N30.mVQKqbk0IZbXLrWMOvOqiB9OSHJgk09Wg0DsIJs0mhA"
+const supabase = supabase.createClient(
+  "TU_SUPABASE_URL",
+  "TU_SUPABASE_ANON_KEY"
 );
 
 const params = new URLSearchParams(window.location.search);
-const creator = params.get("creator");
+const user = params.get('user');
+const videoEl = document.getElementById('liveVideo');
 
-document.getElementById("title").innerText = creator ? `🔴 LIVE · ${creator}` : "No creator";
-
-async function loadLive(){
-  if(!creator) return;
-
-  const { data } = await supabase
-    .from("loops")
-    .select("*")
-    .eq("owner",creator)
-    .eq("active",true)
-    .limit(1);
-
-  if(!data || data.length===0){
-    document.body.innerHTML="<h2 style='text-align:center;margin-top:40vh;'>Creator is offline</h2>";
-    return;
-  }
-
-  document.getElementById("video").src = data[0].video_url;
+async function loadLoop(){
+    const { data: loops } = await supabase.from('loops').select('*').eq('owner', user).eq('active', true).limit(1);
+    if(loops && loops[0]){
+        videoEl.src = loops[0].url;
+    }
 }
 
-loadLive();
+loadLoop();
 </script>
 </body>
 </html>
