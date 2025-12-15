@@ -3,57 +3,46 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard - Creator</title>
+<title>Creator Dashboard</title>
 <style>
 body{font-family:Arial;background:#111;color:white;padding:20px;}
 input,button{padding:10px 15px;margin:5px;border:none;border-radius:5px;cursor:pointer;}
 button{background:red;color:white;}
-.loop-item{border:1px solid #333;padding:10px;margin:10px 0;border-radius:5px;}
+.loop-item{border:1px solid #333;padding:10px;margin:10px 0;border-radius:5px;display:flex;flex-direction:column;}
+.loop-controls{display:flex;justify-content:flex-start;gap:10px;margin-top:5px;}
 video{max-width:400px;border-radius:5px;margin-bottom:5px;}
 </style>
 </head>
 <body>
+
 <h2>Welcome, <span id="userEmail"></span></h2>
 <input type="file" id="videoFile" accept="video/mp4">
-<button id="uploadBtn">Upload Loop</button>
+<button onclick="uploadLoop()">Upload Loop</button>
 
 <h3>Your Loops</h3>
 <div id="loopsContainer"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const supabase = supabase.createClient(
-  "TU_SUPABASE_URL",
-  "TU_SUPABASE_ANON_KEY"
-);
+const supabase = supabase.createClient("TU_SUPABASE_URL","TU_SUPABASE_ANON_KEY");
+let user = supabase.auth.getUser().then(r=>user=r.data.user.email || "demo");
 
-let user = supabase.auth.getUser().then(r=>r.data.user?.email || "unknown");
-document.getElementById('userEmail').innerText = user;
+document.getElementById('userEmail').innerText = localStorage.getItem('currentUser') || "demo";
 
-const uploadBtn = document.getElementById("uploadBtn");
-const loopsContainer = document.getElementById("loopsContainer");
-
-uploadBtn.addEventListener("click", async () => {
-    const file = document.getElementById("videoFile").files[0];
+async function uploadLoop(){
+    const file = document.getElementById('videoFile').files[0];
     if(!file){ alert("Select mp4 file"); return; }
 
-    const filePath = `loops/${user}/${file.name}`;
-    const { error: uploadError } = await supabase.storage.from('public').upload(filePath, file, { upsert:true });
-    if(uploadError){ console.error(uploadError); alert("Upload failed"); return; }
+    const fileName = `${Date.now()}_${file.name}`;
+    const { data, error } = await supabase.storage.from('loops').upload(`loops/${fileName}`, file);
 
-    const { data: publicUrl } = supabase.storage.from('public').getPublicUrl(filePath);
+    if(error){ console.error(error); alert("Upload failed"); return; }
+    const url = supabase.storage.from('loops').getPublicUrl(`loops/${fileName}`).publicUrl;
 
-    const { error: insertError } = await supabase.from('loops').insert([{
-        owner:user,
-        name:file.name,
-        duration: Math.floor(file.size/1000000*10),
-        active:true,
-        url:publicUrl.publicUrl
-    }]);
-    if(insertError){ console.error(insertError); alert("DB insert failed"); return; }
-
-    alert("Loop uploaded successfully!");
-});
+    await supabase.from('loops').insert([{ owner:localStorage.getItem('currentUser'), name:file.name, duration:0, active:true, url }]);
+    alert("Loop uploaded!");
+}
 </script>
+
 </body>
 </html>
