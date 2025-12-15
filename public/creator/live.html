@@ -7,54 +7,32 @@
 <style>
 body{margin:0;background:black;color:white;font-family:Arial;}
 video{width:100vw;height:100vh;object-fit:cover;}
-.overlay{
-  position:absolute;top:0;left:0;width:100%;padding:15px;
-  background:linear-gradient(to bottom,rgba(0,0,0,.7),transparent);
-  color:white;
-}
+.overlay{position:absolute;top:0;left:0;width:100%;padding:15px;background:linear-gradient(to bottom,rgba(0,0,0,.7),transparent);}
 </style>
 </head>
 <body>
 
-<div class="overlay">
-  <h2 id="title"></h2>
-</div>
-
+<div class="overlay"><h2 id="title"></h2></div>
 <video id="liveVideo" autoplay muted loop playsinline></video>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const supabase = supabase.createClient(
-  "https://uurmdzzmzwumjtanlcvz.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1cm1kenptend1bWp0YW5sY3Z6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MDkwNDcsImV4cCI6MjA4MTI4NTA0N30.mVQKqbk0IZbXLrWMOvOqiB9OSHJgk09Wg0DsIJs0mhA"
-);
-
+const supabase = supabase.createClient("TU_SUPABASE_URL","TU_SUPABASE_ANON_KEY");
 const params = new URLSearchParams(window.location.search);
-const creator = params.get("user"); // usa 'user' como parámetro en el link
-
+const creator = params.get("user");
 document.getElementById("title").innerText = creator ? `🔴 LIVE · ${creator}` : "No creator";
 
 async function loadLoop(){
     if(!creator) return;
-
-    const { data: loops, error } = await supabase
-        .from("loops")
-        .select("*")
-        .eq("owner", creator)
-        .eq("active", true)
-        .limit(1);
-
-    if(error){ console.error(error); return; }
+    const { data: loops } = await supabase.from('loops').select('*').eq('owner', creator).eq('active', true).limit(1);
     if(!loops || loops.length===0){
         document.body.innerHTML="<h2 style='text-align:center;margin-top:40vh;'>Creator is offline</h2>";
         return;
     }
-
-    const videoEl = document.getElementById('liveVideo');
-    videoEl.src = loops[0].url;
+    document.getElementById('liveVideo').src = loops[0].url;
 }
-
 loadLoop();
 </script>
+
 </body>
 </html>
