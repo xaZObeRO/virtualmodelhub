@@ -3,82 +3,57 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Creator Dashboard</title>
-
+<title>Dashboard - Creator</title>
 <style>
-body{margin:0;font-family:Arial;background:#111;color:white;padding:30px;}
-h2{margin-bottom:10px;}
-button{background:red;color:white;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;margin:5px;}
-input{margin:10px 0;color:white;}
-.loop{border:1px solid #333;padding:15px;border-radius:10px;margin-top:20px;}
-video{width:100%;max-width:400px;border-radius:10px;margin-top:10px;}
+body{font-family:Arial;background:#111;color:white;padding:20px;}
+input,button{padding:10px 15px;margin:5px;border:none;border-radius:5px;cursor:pointer;}
+button{background:red;color:white;}
+.loop-item{border:1px solid #333;padding:10px;margin:10px 0;border-radius:5px;}
+video{max-width:400px;border-radius:5px;margin-bottom:5px;}
 </style>
 </head>
 <body>
-
-<h2 id="welcome"></h2>
-
+<h2>Welcome, <span id="userEmail"></span></h2>
 <input type="file" id="videoFile" accept="video/mp4">
-<br>
-<button onclick="uploadLoop()">Upload loop</button>
-<button onclick="logout()">Logout</button>
+<button id="uploadBtn">Upload Loop</button>
 
-<div id="loops"></div>
+<h3>Your Loops</h3>
+<div id="loopsContainer"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const supabase = supabaseJs.createClient(
-  "https://uurmdzzmzwumjtanlcvz.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1cm1kenptend1bWp0YW5sY3Z6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MDkwNDcsImV4cCI6MjA4MTI4NTA0N30.mVQKqbk0IZbXLrWMOvOqiB9OSHJgk09Wg0DsIJs0mhA"
+const supabase = supabase.createClient(
+  "TU_SUPABASE_URL",
+  "TU_SUPABASE_ANON_KEY"
 );
 
-let currentUser = null;
+let user = supabase.auth.getUser().then(r=>r.data.user?.email || "unknown");
+document.getElementById('userEmail').innerText = user;
 
-// 1️⃣ Comprobar sesión
-async function checkAuth(){
-  const { data:{user} } = await supabase.auth.getUser();
-  if(!user){ window.location.href="index.html"; return; }
-  currentUser = user;
-  document.getElementById("welcome").innerText = "Welcome " + user.email;
-  loadLoops();
-}
-checkAuth();
+const uploadBtn = document.getElementById("uploadBtn");
+const loopsContainer = document.getElementById("loopsContainer");
 
-// 2️⃣ Subir loop
-async function uploadLoop(){
-  const file = document.getElementById("videoFile").files[0];
-  if(!file){ alert("Select mp4"); return; }
+uploadBtn.addEventListener("click", async () => {
+    const file = document.getElementById("videoFile").files[0];
+    if(!file){ alert("Select mp4 file"); return; }
 
-  const filePath = `${currentUser.email}/${Date.now()}_${file.name}`;
+    const filePath = `loops/${user}/${file.name}`;
+    const { error: uploadError } = await supabase.storage.from('public').upload(filePath, file, { upsert:true });
+    if(uploadError){ console.error(uploadError); alert("Upload failed"); return; }
 
-  const { error:uploadError } = await supabase
-    .storage.from("loops")
-    .upload(filePath,file,{upsert:true});
+    const { data: publicUrl } = supabase.storage.from('public').getPublicUrl(filePath);
 
-  if(uploadError){ alert("Upload error"); console.error(uploadError); return; }
+    const { error: insertError } = await supabase.from('loops').insert([{
+        owner:user,
+        name:file.name,
+        duration: Math.floor(file.size/1000000*10),
+        active:true,
+        url:publicUrl.publicUrl
+    }]);
+    if(insertError){ console.error(insertError); alert("DB insert failed"); return; }
 
-  const { data } = supabase.storage.from("loops").getPublicUrl(filePath);
-
-  await supabase.from("loops").insert({
-    owner: currentUser.email,
-    name: file.name,
-    video_url: data.publicUrl,
-    active: true
-  });
-
-  loadLoops();
-}
-
-// 3️⃣ Cargar loops del creador
-async function loadLoops(){
-  const { data } = await supabase
-    .from("loops")
-    .select("*")
-    .eq("owner", currentUser.email)
-    .order("created_at",{ascending:false});
-
-  const container = document.getElementById("loops");
-  container.innerHTML = "";
-
-  if(!data || data.length===0){
-    container.innerHTML="<p>No loops yet
+    alert("Loop uploaded successfully!");
+});
+</script>
+</body>
+</html>
